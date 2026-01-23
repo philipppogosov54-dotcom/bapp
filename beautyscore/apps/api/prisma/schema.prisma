@@ -27,9 +27,16 @@ model User {
   // Profile
   name          String?
   avatar        String?   // S3 URL
+  gender        Gender?
+  dateOfBirth   DateTime?
   skinType      SkinType?
   hairType      HairType?
   skinProblems  String[]  // Array of problems
+  allergies     String[]  // Array of allergies
+  
+  // Onboarding
+  onboardingCompleted Boolean @default(false)
+  onboardingStep      Int     @default(0)
   
   // OAuth connections
   vkId          String?   @unique
@@ -55,13 +62,24 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // Soft delete for GDPR/152-ФЗ
   
+  // System prompt for LLM personalization
+  systemPrompt        String?   @db.Text
+  systemPromptVersion Int       @default(0)
+  
+  // 152-ФЗ Compliance
+  termsAcceptedAt     DateTime?
+  marketingAcceptedAt DateTime?
+  
   // Relations
-  sessions      Session[]
-  refreshTokens RefreshToken[]
-  products      UserProduct[]
-  scans         Scan[]
-  routines      Routine[]
-  auditLogs     AuditLog[]
+  sessions        Session[]
+  refreshTokens   RefreshToken[]
+  products        UserProduct[]
+  scans           Scan[]
+  routines        Routine[]
+  auditLogs       AuditLog[]
+  surveys         Survey[]
+  notifications   Notification[]
+  searchHistory   SearchHistory[]
 
   @@index([email])
   @@index([phone])
@@ -131,33 +149,72 @@ model VerificationCode {
 model Product {
   id           String   @id @default(cuid())
   
-  // Identification
+  // Identification (Gold Apple format)
+  itemId       String?  @unique // Gold Apple item_id
   barcode      String?  @unique
+  url          String?           // Source URL
   name         String
   brand        String?
+  brandUrl     String?
+  
+  // Classification
+  productType  String?           // "крем для лица", "тональный крем"
   category     ProductCategory
+  categoryPath String?           // "уход > уход для лица > увлажнение"
+  
+  // Details
+  description  String?  @db.Text
+  howToUse     String?  @db.Text
+  inci         String?  @db.Text  // Raw INCI string
   
   // Analysis
   score        Int?     // 0-100
-  ingredients  String[] // Raw ingredient list
-  
-  // Parsed ingredients with safety data
+  ingredients  String[] // Parsed ingredient list
   analyzedIngredients Json? // Array of { name, safety, function, concentration }
+  
+  // Attributes (from Gold Apple)
+  attributes   Json?    // Full attributes_json
+  skinType     String?  // "для сухой кожи", etc.
+  purpose      String?  // "увлажнение, восстановление"
+  area         String?  // "лицо"
+  volume       String?  // "50 мл"
+  texture      String?  // "кремовая"
+  finish       String?  // "матовый"
+  gender       String?  // "универсально"
+  country      String?  // "Россия"
+  
+  // Pricing
+  priceRegular   Int?
+  priceDiscount  Int?
+  discountPercent Int?
   
   // Images
   imageUrl     String?
+  imageCount   Int?     @default(1)
+  
+  // Stock & Status
+  inStock      Boolean  @default(true)
+  isAdult      Boolean  @default(false)
+  
+  // Brand info
+  brandDescription String? @db.Text
   
   // Metadata
+  parsedAt     DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   
   // Relations
-  userProducts UserProduct[]
-  scans        Scan[]
+  userProducts   UserProduct[]
+  scans          Scan[]
+  productReports ProductReport[]
   
+  @@index([itemId])
   @@index([barcode])
   @@index([name])
   @@index([brand])
+  @@index([category])
+  @@index([skinType])
   @@map("products")
 }
 
@@ -223,6 +280,9 @@ model UserProduct {
   // Status
   status    ProductStatus @default(ACTIVE)
   
+  // Soft delete for undo (30 seconds by PRD)
+  deletedAt DateTime?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -274,6 +334,115 @@ model Routine {
 }
 
 // ============================================
+// SURVEYS (Опросы для персонализации)
+// ============================================
+
+model Survey {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        SurveyType
+  version     String     @default("1.0")
+  answers     Json       // { questionId: answer, ... }
+  
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("surveys")
+}
+
+// ============================================
+// NOTIFICATIONS (Уведомления пользователей)
+// ============================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      String   // "survey_reminder", "product_update", "recommendation", etc.
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  data      Json?    // Additional data for deeplinks
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// SEARCH HISTORY (История поиска)
+// ============================================
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  query     String
+  type      String   // "text", "llm", "barcode"
+  productId String?  // If search led to a specific product
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("search_history")
+}
+
+// ============================================
+// PRODUCT REPORTS (Жалобы на товары)
+// ============================================
+
+model ProductReport {
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  userId      String?  // Optional: anonymous reports allowed
+  
+  type        String   // "wrong_info", "missing_info", "other"
+  description String
+  
+  status      ReportStatus @default(PENDING)
+  resolvedAt  DateTime?
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([productId])
+  @@index([status])
+  @@map("product_reports")
+}
+
+// ============================================
+// FEEDBACK (Обратная связь)
+// ============================================
+
+model Feedback {
+  id         String   @id @default(cuid())
+  userId     String?  // Optional: anonymous feedback allowed
+  
+  type       String   // "bug", "feature", "other"
+  message    String
+  screenshot String?  // S3 URL
+  
+  ticketId   String   @unique @default(cuid())
+  status     FeedbackStatus @default(NEW)
+  
+  createdAt  DateTime @default(now())
+  
+  @@index([status])
+  @@index([createdAt])
+  @@map("feedback")
+}
+
+// ============================================
 // AUDIT & SECURITY
 // ============================================
 
@@ -317,6 +486,13 @@ model RateLimitRecord {
 // ============================================
 // ENUMS
 // ============================================
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
 
 enum SkinType {
   DRY
@@ -389,4 +565,25 @@ enum RoutineType {
   EVENING
   WEEKLY
   CUSTOM
+}
+
+enum SurveyType {
+  BASIC
+  DERMATOLOGY
+  TRICHOLOGY
+  CLINICAL
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  REJECTED
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
 }

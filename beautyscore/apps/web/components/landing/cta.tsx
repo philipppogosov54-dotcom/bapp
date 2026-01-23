@@ -2,188 +2,157 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles, Users } from 'lucide-react'
+import { ArrowRight, Shield, Sparkles, Zap } from 'lucide-react'
+
+const features = [
+  { icon: Sparkles, text: 'Бесплатно' },
+  { icon: Shield, text: 'Без рекламы' },
+  { icon: Zap, text: 'Мгновенный анализ' },
+]
 
 export function CTA() {
   return (
     <section style={{
-      padding: '120px 24px',
-      background: 'linear-gradient(135deg, #1A1714 0%, #2D2926 50%, #1A1714 100%)',
+      padding: '60px 16px',
+      background: 'linear-gradient(135deg, #1A1714 0%, #2A2520 50%, #1A1714 100%)',
       position: 'relative',
       overflow: 'hidden',
-    }}>
+    }} className="md:py-[80px] lg:py-[100px] md:px-6">
       {/* Background decorations */}
-      <div style={{
+      <div className="hidden md:block" style={{
         position: 'absolute',
         top: '-50%',
         right: '-20%',
         width: '600px',
         height: '600px',
-        background: 'radial-gradient(circle, rgba(45, 122, 79, 0.15) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(45, 122, 79, 0.15) 0%, transparent 60%)',
         borderRadius: '50%',
         filter: 'blur(80px)',
         pointerEvents: 'none',
       }} />
-      <div style={{
+      <div className="hidden md:block" style={{
         position: 'absolute',
         bottom: '-30%',
         left: '-10%',
         width: '400px',
         height: '400px',
-        background: 'radial-gradient(circle, rgba(196, 128, 77, 0.1) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(196, 128, 77, 0.1) 0%, transparent 60%)',
         borderRadius: '50%',
         filter: 'blur(60px)',
         pointerEvents: 'none',
       }} />
 
-      <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center', position: 'relative' }}>
-        {/* Badge */}
+      <div style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        textAlign: 'center',
+        position: 'relative',
+        zIndex: 1,
+      }}>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          style={{
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Badge */}
+          <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
             padding: '10px 20px',
             backgroundColor: 'rgba(45, 122, 79, 0.2)',
             borderRadius: '100px',
-            marginBottom: '32px',
+            marginBottom: '24px',
             border: '1px solid rgba(45, 122, 79, 0.3)',
-          }}
-        >
-          <Users size={16} style={{ color: '#5B9A6F' }} />
-          <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#5B9A6F' }}>
-            Присоединяйся к 10,000+ пользователей
+          }} className="md:mb-8 md:py-3 md:px-6">
+            <span style={{ fontSize: '1rem' }}>🔬</span>
+            <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#6DD9A0' }}>
+              Готовы начать?
           </span>
-        </motion.div>
+          </div>
 
         {/* Heading */}
-        <motion.h2
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          style={{
-            fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+          <h2 style={{
+            fontSize: 'clamp(1.75rem, 4vw, 3rem)',
             fontWeight: 700,
-            color: '#FDFCFB',
-            marginBottom: '24px',
+            color: 'white',
+            marginBottom: '16px',
             letterSpacing: '-0.02em',
             lineHeight: 1.2,
-          }}
-        >
-          Начни заботиться о себе{' '}
-          <span style={{
-            background: 'linear-gradient(135deg, #5B9A6F 0%, #2D7A4F 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            с уверенностью
-          </span>
-        </motion.h2>
+          }} className="md:mb-6">
+            Узнай состав своей косметики{' '}
+            <span style={{ color: '#6DD9A0' }}>прямо сейчас</span>
+          </h2>
 
         {/* Description */}
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          style={{
-            fontSize: '1.125rem',
-            color: 'rgba(253, 252, 251, 0.7)',
-            marginBottom: '48px',
+          <p style={{
+            fontSize: 'clamp(0.95rem, 2vw, 1.125rem)',
+            color: 'rgba(255, 255, 255, 0.7)',
+            marginBottom: '32px',
             lineHeight: 1.7,
-          }}
-        >
-          Регистрация занимает меньше минуты. Никакой рекламы, никаких скрытых платежей.
-        </motion.p>
+            maxWidth: '520px',
+            margin: '0 auto',
+            padding: '0 8px 32px',
+          }} className="md:pb-10 lg:pb-12">
+            Присоединяйся к тысячам пользователей, которые уже делают осознанный выбор. 
+            Регистрация бесплатная и занимает меньше минуты.
+          </p>
 
-        {/* CTA Buttons */}
+          {/* CTA Button */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            flexWrap: 'wrap',
-          }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            style={{ display: 'inline-block' }}
         >
           <Link href="/register" style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '10px',
-            padding: '18px 36px',
+              gap: '12px',
+              padding: '16px 32px',
             backgroundColor: '#2D7A4F',
             color: 'white',
             borderRadius: '16px',
             fontSize: '1.0625rem',
             fontWeight: 600,
             textDecoration: 'none',
-            boxShadow: '0 8px 32px rgba(45, 122, 79, 0.4)',
-            transition: 'all 0.3s',
-          }}>
-            <Sparkles size={20} />
-            Создать аккаунт бесплатно
-            <ArrowRight size={20} />
-          </Link>
-          <Link href="#features" style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '18px 36px',
-            backgroundColor: 'transparent',
-            color: '#FDFCFB',
-            border: '2px solid rgba(253, 252, 251, 0.2)',
-            borderRadius: '16px',
-            fontSize: '1.0625rem',
-            fontWeight: 500,
-            textDecoration: 'none',
-            transition: 'all 0.3s',
-          }}>
-            Узнать больше
+              boxShadow: '0 8px 32px rgba(45, 122, 79, 0.4), 0 0 0 1px rgba(45, 122, 79, 0.2)',
+              transition: 'all 0.2s',
+            }} className="md:py-5 md:px-10 md:text-lg md:gap-3 md:rounded-[20px]">
+              Создать бесплатный аккаунт
+              <ArrowRight size={20} className="md:w-6 md:h-6" />
           </Link>
         </motion.div>
 
-        {/* Trust badges */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          style={{
-            marginTop: '64px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '40px',
-            flexWrap: 'wrap',
-          }}
+          {/* Features badges */}
+          <div 
+            className="flex flex-wrap items-center justify-center gap-3 md:gap-6"
+            style={{ marginTop: '32px' }}
         >
-          {[
-            { label: 'Бесплатно', icon: '🆓' },
-            { label: 'Без рекламы', icon: '🚫' },
-            { label: 'Приватно', icon: '🔒' },
-          ].map((badge) => (
+            {features.map((feature) => {
+              const Icon = feature.icon
+              return (
             <div
-              key={badge.label}
+                  key={feature.text}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                color: 'rgba(253, 252, 251, 0.5)',
-                fontSize: '0.875rem',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    borderRadius: '100px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
               }}
-            >
-              <span>{badge.icon}</span>
-              <span>{badge.label}</span>
+                  className="md:py-3 md:px-5 md:gap-2"
+                >
+                  <Icon size={14} style={{ color: '#6DD9A0' }} className="md:w-4 md:h-4" />
+                  <span style={{ fontSize: '0.8125rem', color: 'rgba(255, 255, 255, 0.8)' }} className="md:text-sm">
+                    {feature.text}
+                  </span>
+                </div>
+              )
+            })}
             </div>
-          ))}
         </motion.div>
       </div>
     </section>

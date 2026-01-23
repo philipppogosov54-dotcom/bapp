@@ -2,56 +2,103 @@
 
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
-import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
-
-const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95',
-  {
-    variants: {
-      variant: {
-        default:
-          'bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30',
-        secondary:
-          'bg-white text-gray-900 hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300',
-        outline:
-          'border-2 border-primary-500 bg-transparent text-primary-600 hover:bg-primary-50',
-        ghost: 'hover:bg-gray-100 text-gray-700',
-        link: 'text-primary-600 underline-offset-4 hover:underline',
-        destructive: 'bg-red-500 text-white hover:bg-red-600',
-      },
-      size: {
-        default: 'h-11 px-6 py-3',
-        sm: 'h-9 px-4 py-2 text-xs',
-        lg: 'h-14 px-8 py-4 text-base',
-        icon: 'h-11 w-11',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  }
-)
+import { Loader2 } from 'lucide-react'
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
+  size?: 'default' | 'sm' | 'lg'
+  loading?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'default', asChild = false, loading, children, disabled, style, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button'
+    
+    const baseStyle: React.CSSProperties = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      borderRadius: '14px',
+      fontWeight: 600,
+      cursor: disabled || loading ? 'not-allowed' : 'pointer',
+      transition: 'all 0.15s',
+      border: 'none',
+      opacity: disabled || loading ? 0.7 : 1,
+    }
+    
+    const variantStyles: Record<string, React.CSSProperties> = {
+      primary: {
+        backgroundColor: '#2D7A4F',
+        color: 'white',
+      },
+      secondary: {
+        backgroundColor: '#F7F5F3',
+        color: '#1A1714',
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        color: '#2D7A4F',
+        border: '2px solid #2D7A4F',
+      },
+      ghost: {
+        backgroundColor: 'transparent',
+        color: '#6B6259',
+      },
+    }
+    
+    const sizeStyles: Record<string, React.CSSProperties> = {
+      default: {
+        height: '44px',
+        padding: '0 24px',
+        fontSize: '0.875rem',
+      },
+      sm: {
+        height: '36px',
+        padding: '0 16px',
+        fontSize: '0.75rem',
+      },
+      lg: {
+        height: '52px',
+        padding: '0 32px',
+        fontSize: '1rem',
+      },
+    }
+    
+    const combinedStyle = {
+      ...baseStyle,
+      ...variantStyles[variant],
+      ...sizeStyles[size],
+      ...style,
+    }
+    
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        style={combinedStyle}
+        className={cn(
+          'hover:opacity-90 active:scale-[0.98]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2D7A4F]/50',
+          className
+        )}
         ref={ref}
+        disabled={disabled || loading}
         {...props}
-      />
+      >
+        {loading ? (
+          <>
+            <Loader2 size={20} className="animate-spin" />
+            {children}
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
     )
   }
 )
 Button.displayName = 'Button'
 
-export { Button, buttonVariants }
+export { Button }

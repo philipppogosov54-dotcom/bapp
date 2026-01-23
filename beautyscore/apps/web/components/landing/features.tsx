@@ -66,7 +66,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
     },
   },
 }
@@ -76,13 +76,14 @@ export function Features() {
     <section
       id="features"
       style={{
-        padding: '120px 24px',
+        padding: '80px 16px',
         backgroundColor: '#FDFCFB',
         position: 'relative',
       }}
+      className="md:py-[100px] lg:py-[120px] md:px-6"
     >
       {/* Background decoration */}
-      <div style={{
+      <div className="hidden md:block" style={{
         position: 'absolute',
         top: '50%',
         left: '50%',
@@ -103,24 +104,26 @@ export function Features() {
           transition={{ duration: 0.6 }}
           style={{
             textAlign: 'center',
-            marginBottom: '80px',
+            marginBottom: '48px',
           }}
+          className="md:mb-[60px] lg:mb-[80px]"
         >
           <h2 style={{
-            fontSize: 'clamp(2rem, 4vw, 3rem)',
+            fontSize: 'clamp(1.75rem, 4vw, 3rem)',
             fontWeight: 700,
             color: '#1A1714',
-            marginBottom: '20px',
+            marginBottom: '16px',
             letterSpacing: '-0.02em',
-          }}>
+          }} className="md:mb-5">
             Всё для осознанного выбора косметики
           </h2>
           <p style={{
-            fontSize: '1.125rem',
+            fontSize: 'clamp(0.95rem, 2vw, 1.125rem)',
             color: '#6B6259',
             maxWidth: '600px',
             margin: '0 auto',
             lineHeight: 1.7,
+            padding: '0 8px',
           }}>
             Мы превращаем сложные составы в понятную информацию, 
             чтобы ты мог заботиться о себе с уверенностью.
@@ -133,11 +136,7 @@ export function Features() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-50px' }}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '24px',
-          }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6"
         >
           {features.map((feature) => {
             const Icon = feature.icon
@@ -150,36 +149,37 @@ export function Features() {
                   boxShadow: '0 24px 48px rgba(0,0,0,0.08)',
                 }}
                 style={{
-                  padding: '36px',
+                  padding: '28px',
                   backgroundColor: 'white',
-                  borderRadius: '24px',
+                  borderRadius: '20px',
                   border: '1px solid #EDE9E4',
                   cursor: 'default',
                   transition: 'box-shadow 0.3s, transform 0.3s',
                 }}
+                className="md:p-8 lg:p-9"
               >
                 <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '16px',
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '14px',
                   backgroundColor: feature.bgColor,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '24px',
-                }}>
-                  <Icon size={28} style={{ color: feature.color }} />
+                  marginBottom: '20px',
+                }} className="md:w-14 md:h-14 md:rounded-[16px] md:mb-6">
+                  <Icon size={24} style={{ color: feature.color }} className="md:w-7 md:h-7" />
                 </div>
                 <h3 style={{
-                  fontSize: '1.25rem',
+                  fontSize: 'clamp(1.1rem, 2vw, 1.25rem)',
                   fontWeight: 600,
                   color: '#1A1714',
-                  marginBottom: '12px',
-                }}>
+                  marginBottom: '10px',
+                }} className="md:mb-3">
                   {feature.title}
                 </h3>
                 <p style={{
-                  fontSize: '0.9375rem',
+                  fontSize: 'clamp(0.875rem, 1.5vw, 0.9375rem)',
                   color: '#6B6259',
                   lineHeight: 1.6,
                 }}>

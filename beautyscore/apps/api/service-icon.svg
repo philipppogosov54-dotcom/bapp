@@ -1,0 +1,34 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#gradient)"/>
+  
+  <!-- Sparkle/Star decoration top right -->
+  <path d="M410 120 L415 110 L420 120 L430 125 L420 130 L415 140 L410 130 L400 125 Z" fill="white" opacity="0.9"/>
+  <path d="M380 90 L383 84 L386 90 L392 93 L386 96 L383 102 L380 96 L374 93 Z" fill="white" opacity="0.7"/>
+  
+  <!-- Main beauty/cosmetic icon - lipstick/makeup brush combination -->
+  <!-- Lipstick shape -->
+  <path d="M220 180 L220 340 C220 360 230 370 256 370 C282 370 292 360 292 340 L292 180 Z" fill="white"/>
+  <rect x="220" y="340" width="72" height="40" rx="8" fill="white" opacity="0.9"/>
+  <ellipse cx="256" cy="170" rx="36" ry="15" fill="#FFB6D9"/>
+  <rect x="220" y="165" width="72" height="20" fill="#FFB6D9"/>
+  
+  <!-- Decorative lines on lipstick -->
+  <line x1="235" y1="200" x2="235" y2="320" stroke="#FFB6D9" stroke-width="2" opacity="0.5"/>
+  <line x1="277" y1="200" x2="277" y2="320" stroke="#FFB6D9" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Sparkle/shine effect -->
+  <path d="M200 240 L205 230 L210 240 L220 245 L210 250 L205 260 L200 250 L190 245 Z" fill="white" opacity="0.8"/>
+  <circle cx="310" cy="200" r="4" fill="white" opacity="0.9"/>
+  <circle cx="320" cy="280" r="3" fill="white" opacity="0.7"/>
+  
+  <!-- Bottom sparkle -->
+  <path d="M140 420 L143 414 L146 420 L152 423 L146 426 L143 432 L140 426 L134 423 Z" fill="white" opacity="0.6"/>
+  
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B9D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#C44569;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

@@ -18,7 +18,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-2"
+            style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+              color: '#1A1714',
+              marginBottom: '8px',
+            }}
           >
             {label}
           </label>
@@ -26,21 +32,38 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           id={inputId}
           type={type}
+          style={{
+            width: '100%',
+            height: '52px',
+            padding: '0 16px',
+            backgroundColor: '#F7F5F3',
+            border: error ? '2px solid #DC2626' : '2px solid transparent',
+            borderRadius: '14px',
+            fontSize: '1rem',
+            color: '#1A1714',
+            outline: 'none',
+            transition: 'border-color 0.15s, background-color 0.15s',
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = error ? '#DC2626' : '#2D7A4F';
+            e.target.style.backgroundColor = '#FDFCFB';
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = error ? '#DC2626' : 'transparent';
+            e.target.style.backgroundColor = '#F7F5F3';
+          }}
           className={cn(
-            'w-full h-12 px-4 bg-white border-2 rounded-xl text-gray-900 placeholder:text-gray-400',
-            'transition-all duration-200',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500',
+            'placeholder:text-[#8C8177]',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            error
-              ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
-              : 'border-gray-200 hover:border-gray-300',
             className
           )}
           ref={ref}
           {...props}
         />
         {error && (
-          <p className="mt-2 text-sm text-red-500">{error}</p>
+          <p style={{ color: '#DC2626', fontSize: '0.75rem', marginTop: '4px' }}>
+            {error}
+          </p>
         )}
       </div>
     )

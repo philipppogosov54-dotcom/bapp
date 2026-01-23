@@ -16,6 +16,9 @@ export const registerSchema = z.object({
     ),
   confirmPassword: z.string().min(1, 'Подтвердите пароль'),
   name: z.string().min(2, 'Имя должно содержать минимум 2 символа').optional(),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: 'Необходимо принять условия использования',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Пароли не совпадают',
   path: ['confirmPassword'],

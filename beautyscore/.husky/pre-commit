@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# Pre-commit hook for BeautyScore
+# Runs lint-staged for code quality checks
+
+# Run lint-staged
+pnpm run precommit
+
+# Run type check on staged files
+echo "🔍 Running type check..."
+pnpm run check-types
+
+# If type check fails, abort commit
+if [ $? -ne 0 ]; then
+  echo "❌ Type check failed. Please fix the errors before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
