@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Search, ChevronRight, Loader2, Package, Filter } from 'lucide-react'
-import { useSearch } from '@/lib/api/hooks'
+import { Search, ChevronRight, Loader2, Package, Filter, X } from 'lucide-react'
+import { api } from '@/lib/api'
 
 // Design system colors [[memory:13485295]]
 const colors = {
@@ -24,6 +24,24 @@ const colors = {
   scorePoor: '#C45252',
 }
 
+interface Product {
+  id: string
+  name: string
+  brand: string | null
+  productType: string | null
+  imageUrl: string | null
+  priceRegular: number | null
+  priceDiscount: number | null
+  score: number | null
+}
+
+interface SearchResult {
+  products: Product[]
+  total: number
+  page: number
+  hasMore: boolean
+}
+
 function getScoreColor(score: number | null): string {
   if (score === null) return colors.textTertiary
   if (score >= 85) return colors.scoreExcellent
@@ -32,28 +50,120 @@ function getScoreColor(score: number | null): string {
   return colors.scorePoor
 }
 
+const ITEMS_PER_PAGE = 20
+
 function SearchContent() {
   const searchParams = useSearchParams()
   const initialQuery = searchParams.get('q') || ''
   
   const [searchQuery, setSearchQuery] = useState(initialQuery)
-  const { results, isLoading, search, clearResults } = useSearch()
+  const [products, setProducts] = useState<Product[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Ref for infinite scroll observer
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+
+  // Load products with pagination
+  const loadProducts = useCallback(async (query: string, pageNum: number, reset: boolean = false) => {
+    if (!query || query.length < 2) {
+      setProducts([])
+      setTotal(0)
+      setHasMore(false)
+      return
+    }
+
+    if (reset) {
+      setIsLoading(true)
+    } else {
+      setIsLoadingMore(true)
+    }
+    setError(null)
+
+    try {
+      const params = new URLSearchParams({
+        q: query.slice(0, 500),
+        page: String(pageNum),
+        limit: String(ITEMS_PER_PAGE),
+      })
+      
+      const data = await api.get<SearchResult>(`/search?${params}`)
+      
+      if (reset) {
+        setProducts(data.products)
+      } else {
+        setProducts(prev => [...prev, ...data.products])
+      }
+      setTotal(data.total)
+      setHasMore(data.hasMore)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка поиска')
+    } finally {
+      setIsLoading(false)
+      setIsLoadingMore(false)
+    }
+  }, [])
 
   // Search on initial load if query exists
   useEffect(() => {
     if (initialQuery) {
-      search(initialQuery)
+      setPage(1)
+      loadProducts(initialQuery, 1, true)
     }
-  }, [initialQuery, search])
+  }, [initialQuery, loadProducts])
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry?.isIntersecting && hasMore && !isLoading && !isLoadingMore && searchQuery.length >= 2) {
+          const nextPage = page + 1
+          setPage(nextPage)
+          loadProducts(searchQuery, nextPage, false)
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    )
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current)
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [hasMore, isLoading, isLoadingMore, page, searchQuery, loadProducts])
 
   // Handle search submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.length >= 2) {
-      search(searchQuery)
+      setPage(1)
+      setProducts([])
+      setHasMore(true)
+      loadProducts(searchQuery, 1, true)
       // Update URL without navigation
       window.history.replaceState({}, '', `/app/search?q=${encodeURIComponent(searchQuery)}`)
     }
+  }
+
+  const handleClear = () => {
+    setSearchQuery('')
+    setProducts([])
+    setTotal(0)
+    setHasMore(false)
   }
 
   return (
@@ -104,7 +214,7 @@ function SearchContent() {
                 width: '100%',
                 height: '52px',
                 paddingLeft: '48px',
-                paddingRight: '16px',
+                paddingRight: searchQuery ? '48px' : '16px',
                 borderRadius: '14px',
                 fontSize: '1rem',
                 backgroundColor: colors.bgSecondary,
@@ -114,6 +224,25 @@ function SearchContent() {
                 boxSizing: 'border-box',
               }}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={handleClear}
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: '4px',
+                  border: 'none',
+                  background: 'none',
+                  cursor: 'pointer',
+                  color: colors.textTertiary,
+                }}
+              >
+                <X size={20} />
+              </button>
+            )}
           </div>
           <button
             type="submit"
@@ -148,7 +277,7 @@ function SearchContent() {
           <p style={{ color: colors.textSecondary }}>Поиск...</p>
           <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
-      ) : results ? (
+      ) : products.length > 0 ? (
         <>
           {/* Results Count */}
           <div style={{
@@ -158,7 +287,7 @@ function SearchContent() {
             marginBottom: '16px',
           }}>
             <p style={{ color: colors.textSecondary, margin: 0 }}>
-              Найдено: <strong>{results.total}</strong> {results.total === 1 ? 'продукт' : 'продуктов'}
+              Найдено: <strong>{total}</strong> продуктов
             </p>
             <button
               style={{
@@ -180,109 +309,155 @@ function SearchContent() {
           </div>
 
           {/* Products List */}
-          {results.products.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '48px 24px',
-              backgroundColor: colors.bgSecondary,
-              borderRadius: '16px',
-            }}>
-              <Package size={48} style={{ color: colors.textTertiary, marginBottom: '16px' }} />
-              <h3 style={{ color: colors.textPrimary, marginBottom: '8px' }}>
-                Ничего не найдено
-              </h3>
-              <p style={{ color: colors.textSecondary, margin: 0 }}>
-                Попробуйте изменить поисковый запрос
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {results.products.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {products.map((product, index) => (
+              <motion.div
+                key={`${product.id}-${index}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(index * 0.02, 0.5) }}
+              >
+                <Link
+                  href={`/app/product/${product.id}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '16px',
+                    borderRadius: '16px',
+                    backgroundColor: colors.bgSecondary,
+                    textDecoration: 'none',
+                  }}
                 >
-                  <Link
-                    href={`/app/product/${product.id}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      padding: '16px',
-                      borderRadius: '16px',
-                      backgroundColor: colors.bgSecondary,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    {/* Product Image */}
+                  {/* Product Image */}
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '12px',
+                    backgroundColor: colors.bgTertiary,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}>
+                    {product.imageUrl ? (
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.name}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '1.5rem' }}>🧴</span>
+                    )}
+                  </div>
+
+                  {/* Product Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '12px',
-                      backgroundColor: colors.bgTertiary,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
+                      fontWeight: 500,
+                      color: colors.textPrimary,
+                      marginBottom: '4px',
                       overflow: 'hidden',
-                      position: 'relative',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}>
-                      {product.imageUrl ? (
-                        <Image
-                          src={product.imageUrl}
-                          alt={product.name}
-                          fill
-                          style={{ objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: '1.5rem' }}>🧴</span>
+                      {product.name}
+                    </div>
+                    <div style={{
+                      fontSize: '0.875rem',
+                      color: colors.textTertiary,
+                      marginBottom: '4px',
+                    }}>
+                      {product.brand || 'Без бренда'}{product.productType ? ` • ${product.productType}` : ''}
+                    </div>
+                    {/* Price */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {product.priceDiscount && (
+                        <span style={{ fontWeight: 600, color: colors.accentGreen, fontSize: '0.875rem' }}>
+                          {product.priceDiscount} ₽
+                        </span>
+                      )}
+                      {product.priceRegular && (
+                        <span style={{
+                          fontSize: '0.8125rem',
+                          color: colors.textTertiary,
+                          textDecoration: product.priceDiscount ? 'line-through' : 'none',
+                        }}>
+                          {product.priceRegular} ₽
+                        </span>
                       )}
                     </div>
+                  </div>
 
-                    {/* Product Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontWeight: 500,
-                        color: colors.textPrimary,
-                        marginBottom: '4px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {product.name}
-                      </div>
-                      <div style={{
-                        fontSize: '0.875rem',
-                        color: colors.textTertiary,
-                      }}>
-                        {product.brand || 'Без бренда'}{product.productType ? ` • ${product.productType}` : ''}
-                      </div>
+                  {/* Score */}
+                  {product.score !== null && (
+                    <div style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      color: 'white',
+                      backgroundColor: getScoreColor(product.score),
+                      flexShrink: 0,
+                    }}>
+                      {product.score}
                     </div>
+                  )}
 
-                    {/* Score */}
-                    {product.score !== null && (
-                      <div style={{
-                        padding: '6px 12px',
-                        borderRadius: '8px',
-                        fontWeight: 600,
-                        fontSize: '0.875rem',
-                        color: 'white',
-                        backgroundColor: getScoreColor(product.score),
-                        flexShrink: 0,
-                      }}>
-                        {product.score}
-                      </div>
-                    )}
-
-                    <ChevronRight size={20} style={{ color: colors.textTertiary, flexShrink: 0 }} />
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                  <ChevronRight size={20} style={{ color: colors.textTertiary, flexShrink: 0 }} />
+                </Link>
+              </motion.div>
+            ))}
+            
+            {/* Infinite scroll sentinel */}
+            <div ref={loadMoreRef} style={{ height: '20px' }} />
+            
+            {/* Loading more indicator */}
+            {isLoadingMore && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '24px',
+                color: colors.textSecondary,
+              }}>
+                <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Загрузка...</span>
+              </div>
+            )}
+            
+            {/* End of list */}
+            {!hasMore && products.length > 0 && (
+              <div style={{
+                textAlign: 'center',
+                padding: '24px',
+                color: colors.textTertiary,
+                fontSize: '0.875rem',
+              }}>
+                Показаны все {total} продуктов
+              </div>
+            )}
+          </div>
         </>
+      ) : searchQuery.length >= 2 && !isLoading ? (
+        <div style={{
+          textAlign: 'center',
+          padding: '48px 24px',
+          backgroundColor: colors.bgSecondary,
+          borderRadius: '16px',
+        }}>
+          <Package size={48} style={{ color: colors.textTertiary, marginBottom: '16px' }} />
+          <h3 style={{ color: colors.textPrimary, marginBottom: '8px' }}>
+            Ничего не найдено
+          </h3>
+          <p style={{ color: colors.textSecondary, margin: 0 }}>
+            Попробуйте изменить поисковый запрос
+          </p>
+        </div>
       ) : (
         <div style={{
           textAlign: 'center',
